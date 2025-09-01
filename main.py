@@ -1,16 +1,23 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import torch
+import os
 
 app = FastAPI(title="LightGuard API", description="Production LLM Safety Filter")
 JAILBREAK_THRESHOLD = 0.90
 
+# Serve React build files
+app.mount("/static", StaticFiles(directory="frontend/build/static"), name="static")
+
+# Load model
 print("Loading LightGuard classification model...")
 model_path = "./lightguard_final_model"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 model = AutoModelForSequenceClassification.from_pretrained(model_path)
-classifier = pipeline("text-classification", model=model, tokenizer=tokenizer, top_k=None)
+classifier = pipeline("text-classification", model=model, tokenizer=tokenizer, device=-1, top_k=None)
 print("Model loaded successfully.")
 
 class PromptRequest(BaseModel):
@@ -36,9 +43,13 @@ async def check_safety(request: PromptRequest):
         return {"error": str(e)}
 
 @app.get("/")
-async def root():
-    return {"message": "LightGuard Safety API is operational."}
+async def serve_react_app():
+    return FileResponse("frontend/build/index.html")
+
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    return FileResponse("frontend/build/index.html")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)  # ← Use port 7860 for HF
+    uvicorn.run(app, host="0.0.0.0", port=7860)
