@@ -3,3 +3,4 @@ uvicorn[standard]==0.32.0
 transformers==4.55.4
 torch==2.8.0
 accelerate==1.10.1
+transformers-interpret==1.5.2

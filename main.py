@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import torch
 import os
+from transformers_interpret import SequenceClassificationExplainer
 
 app = FastAPI(title="LightGuard API", description="Production LLM Safety Filter")
 JAILBREAK_THRESHOLD = 0.90
@@ -34,10 +35,23 @@ async def check_safety(request: PromptRequest):
         results = classifier(request.prompt)
         jailbreak_score = next(item['score'] for item in results[0] if item['label'] == 'LABEL_1')
         is_safe = jailbreak_score < JAILBREAK_THRESHOLD
+        
+        # Add explainability only for unsafe prompts
+        explanation = None
+        if not is_safe:
+            # Initialize explainer
+            explainer = SequenceClassificationExplainer(model, tokenizer)
+            # Get word attributions (this may take a moment)
+            word_attributions = explainer(request.prompt)
+            # Extract top 3 most suspicious phrases
+            top_attributions = sorted(word_attributions, key=lambda x: x[1], reverse=True)[:3]
+            explanation = " | ".join([f"'{word}' ({score:.2f})" for word, score in top_attributions])
+        
         return {
             "safe": is_safe,
             "jailbreak_score": jailbreak_score,
-            "message": None if is_safe else "Blocked: High jailbreak probability."
+            "message": None if is_safe else "Blocked: High jailbreak probability.",
+            "explanation": explanation  # New field
         }
     except Exception as e:
         return {"error": str(e)}
