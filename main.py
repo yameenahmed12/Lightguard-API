@@ -7,6 +7,8 @@ import torch
 import os
 from transformers_interpret import SequenceClassificationExplainer
 
+# Cache directories are set in Dockerfile
+
 app = FastAPI(title="LightGuard API", description="Production LLM Safety Filter")
 JAILBREAK_THRESHOLD = 0.90
 
@@ -15,9 +17,23 @@ app.mount("/static", StaticFiles(directory="frontend/build/static"), name="stati
 
 # Load model
 print("Loading LightGuard classification model...")
-model_path = "./lightguard_final_model"
-tokenizer = AutoTokenizer.from_pretrained(model_path)
-model = AutoModelForSequenceClassification.from_pretrained(model_path)
+
+# Try to load from local files first, fallback to HF Hub if needed
+local_model_path = "lightguard_final_model"
+if os.path.exists(local_model_path):
+    print(f"Loading model from local path: {local_model_path}")
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(local_model_path, local_files_only=True)
+        model = AutoModelForSequenceClassification.from_pretrained(local_model_path, local_files_only=True)
+    except Exception as e:
+        print(f"Local loading failed: {e}")
+        print("Falling back to Hugging Face Hub...")
+        tokenizer = AutoTokenizer.from_pretrained("yahmed124/lightguard-model")
+        model = AutoModelForSequenceClassification.from_pretrained("yahmed124/lightguard-model")
+else:
+    print("Local model not found, loading from Hugging Face Hub...")
+    tokenizer = AutoTokenizer.from_pretrained("yahmed124/lightguard-model")
+    model = AutoModelForSequenceClassification.from_pretrained("yahmed124/lightguard-model")
 classifier = pipeline("text-classification", model=model, tokenizer=tokenizer, device=-1, top_k=None)
 print("Model loaded successfully.")
 

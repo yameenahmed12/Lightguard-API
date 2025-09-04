@@ -109,6 +109,33 @@ button:disabled {
   color: #6b7280;
 }
 
+.explanation {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  border-left: 4px solid #f59e0b;
+}
+
+.explanation h5 {
+  margin: 0 0 10px 0;
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.explanation-text {
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+  font-family: 'Courier New', monospace;
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 4px;
+  word-break: break-word;
+}
+
 .examples {
   margin-top: 25px;
   padding-top: 20px;

@@ -6,6 +6,7 @@ interface SafetyResult {
   safe: boolean;
   jailbreak_score: number;
   message?: string;
+  explanation?: string;
 }
 
 const App: React.FC = () => {
@@ -72,6 +73,12 @@ const App: React.FC = () => {
               Jailbreak Confidence: {(result.jailbreak_score * 100).toFixed(2)}%
             </p>
             {result.message && <p className="message">{result.message}</p>}
+            {result.explanation && (
+              <div className="explanation">
+                <h5>🔍 Why was this flagged?</h5>
+                <p className="explanation-text">{result.explanation}</p>
+              </div>
+            )}
           </div>
         )}
 
